@@ -13,6 +13,8 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	transfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
+	ibcsm "github.com/cosmos/ibc-go/v7/modules/light-clients/06-solomachine"
+	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
@@ -41,7 +43,7 @@ func (s *TestSuite) SetupTest() {
 	s.config = config
 
 	// create chain clients
-	chainClients, err := starship.NewChainClients(zap.L(), config)
+	chainClients, err := starship.NewChainClients(zap.L(), config, ibctm.AppModuleBasic{}, ibcsm.AppModuleBasic{})
 	s.Require().NoError(err)
 	s.chainClients = chainClients
 }

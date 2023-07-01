@@ -9,9 +9,8 @@ import (
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/go-bip39"
-	ibcsm "github.com/cosmos/ibc-go/v7/modules/light-clients/06-solomachine"
-	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
 	"github.com/golang/protobuf/jsonpb"
 	lens "github.com/strangelove-ventures/lens/client"
 	"go.uber.org/zap"
@@ -21,10 +20,10 @@ import (
 
 type ChainClients []*ChainClient
 
-func NewChainClients(logger *zap.Logger, config *Config) (ChainClients, error) {
+func NewChainClients(logger *zap.Logger, config *Config, modules ...module.AppModuleBasic) (ChainClients, error) {
 	var clients []*ChainClient
 	for _, chain := range config.Chains {
-		client, err := NewChainClient(logger, config, chain.Name)
+		client, err := NewChainClient(logger, config, chain.Name, modules...)
 		if err != nil {
 			logger.Error("unable to create client for chain",
 				zap.String("chain_id", chain.Name),
@@ -60,7 +59,7 @@ type ChainClient struct {
 	Client      *lens.ChainClient
 }
 
-func NewChainClient(logger *zap.Logger, config *Config, chainID string) (*ChainClient, error) {
+func NewChainClient(logger *zap.Logger, config *Config, chainID string, modules ...module.AppModuleBasic) (*ChainClient, error) {
 	cc := config.GetChain(chainID)
 
 	chainClient := &ChainClient{
@@ -89,9 +88,7 @@ func NewChainClient(logger *zap.Logger, config *Config, chainID string) (*ChainC
 		Slip44:         int(registry.Slip44),
 		Modules: append(
 			lens.ModuleBasics,
-			ibctm.AppModuleBasic{},
-			ibcsm.AppModuleBasic{},
-			// TODO: An arg can be added to add more modules here
+			modules...,
 		),
 	}
 
