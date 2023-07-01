@@ -248,6 +248,8 @@ defaultRelayers:
     image: ghcr.io/cosmology-tech/starship/ts-relayer:0.9.0
   hermes:
     image: ghcr.io/cosmology-tech/starship/hermes:1.5.1
+  icq:
+    image: marcpt/persistenceone-icq:latest-amd64
 
 chains: []
   # Examples running chains
