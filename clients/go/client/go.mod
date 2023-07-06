@@ -9,7 +9,6 @@ require (
 	github.com/cosmology-tech/starship/registry v0.0.0-20230502113025-a30015992e4d
 	github.com/cosmos/cosmos-sdk v0.47.3
 	github.com/cosmos/go-bip39 v1.0.0
-	github.com/cosmos/ibc-go/v7 v7.2.0
 	github.com/golang/protobuf v1.5.3
 	github.com/strangelove-ventures/lens v0.5.2-0.20230626182213-8e3cbe5befd8
 	go.uber.org/zap v1.24.0
@@ -54,6 +53,7 @@ require (
 	github.com/cosmos/gogogateway v1.2.0 // indirect
 	github.com/cosmos/gogoproto v1.4.10 // indirect
 	github.com/cosmos/iavl v0.20.0 // indirect
+	github.com/cosmos/ibc-go/v7 v7.2.0 // indirect
 	github.com/cosmos/ics23/go v0.10.0 // indirect
 	github.com/cosmos/ledger-cosmos-go v0.12.1 // indirect
 	github.com/cosmos/rosetta-sdk-go v0.10.0 // indirect
