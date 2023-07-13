@@ -250,6 +250,8 @@ defaultRelayers:
     image: ghcr.io/cosmology-tech/starship/hermes:1.5.1
   icq:
     image: marcpt/persistenceone-icq:latest-amd64
+  go-relayer:
+    image: ajeetgoyal/go-relayer:main
 
 chains: []
   # Examples running chains

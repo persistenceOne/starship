@@ -1,0 +1,52 @@
+{{- $keys := .Files.Get "configs/keys.json" | fromJson }}
+{{- range $relayer := .Values.relayers }}
+{{- if eq $relayer.type "go-relayer" }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ $relayer.type }}-{{ $relayer.name }}"
+data:
+  config.yaml: |-
+    global:
+      api-listen-addr: :5183
+      timeout: 10s
+      memo: ""
+      light-cache-size: 20
+    chains:
+      {{- range $i, $chain_id := $relayer.chains }}
+      {{ $chain_id }}:
+        {{- range $chain := $.Values.chains }}
+        {{- if eq $chain.name $chain_id }}
+        {{ $defaultChain := get $.Values.defaultChains $chain.type }}
+        {{ $chain = merge $chain $defaultChain }}
+        type: cosmos
+        value:
+          key-directory: /root/.relayer/keys/{{ $chain_id }}
+          key: {{ $chain_id }}-key
+          chain-id: {{ $chain_id }}
+          rpc-addr: http://{{ $chain_id }}-genesis.{{ $.Release.Namespace }}.svc.cluster.local:26657
+          account-prefix: {{ $chain.prefix }}
+          keyring-backend: test
+          gas-adjustment: 1.5
+          gas-prices: 0.01{{ $chain.denom }}
+          debug: false
+          timeout: 30s
+          block-timeout: ""
+          output-format: json
+          sign-mode: direct
+        {{- end }}
+        {{- end }}
+      {{- end }}
+    paths:
+      {{ $relayer.name }}:
+        src:
+          chain-id: {{ index $relayer.chains 0 }}
+        dst:
+          chain-id: {{ index $relayer.chains 1 }}
+        src-channel-filter:
+          rule: ""
+          channel-list: []
+---
+{{- end }}
+{{- end }}

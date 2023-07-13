@@ -1,0 +1,118 @@
+{{- range $relayer := .Values.relayers }}
+{{- if eq $relayer.type "go-relayer" }}
+{{ $defaultRelayer := get $.Values.defaultRelayers $relayer.type }}
+{{ $initParams := dict "chains" $relayer.chains "port" $.Values.exposer.ports.rest "context" $ }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $relayer.type }}-{{ $relayer.name }}
+spec:
+  serviceName: {{ $relayer.type }}-{{ $relayer.name }}
+  replicas: {{ $relayer.replicas }}
+  podManagementPolicy: "Parallel"
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: relayer
+      app.kubernetes.io/type: {{ $relayer.type }}
+      app.kubernetes.io/name: {{ $relayer.type }}-{{ $relayer.name }}
+  template:
+    metadata:
+      annotations:
+        quality: release
+        role: api-gateway
+        sla: high
+        tier: gateway
+      labels:
+        app.kubernetes.io/instance: relayer
+        app.kubernetes.io/type: {{ $relayer.type }}
+        app.kubernetes.io/name: {{ $relayer.type }}-{{ $relayer.name }}
+        app.kubernetes.io/version: {{ $.Chart.AppVersion }}
+    spec:
+      initContainers:
+        {{/* Waits for all upstream chains before starting relayer, vai init containers */}}
+        {{- include "devnet.init.wait" $initParams | indent 8 }}
+        - name: init-relayer
+          image: {{ $relayer.image | default $defaultRelayer.image }}
+          imagePullPolicy: Always
+          env:
+            - name: KEYS_CONFIG
+              value: /keys/keys.json
+            - name: RELAYER_DIR
+              value: /root/.relayer
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          command:
+            - bash
+            - "-c"
+            - |
+              RLY_INDEX=${HOSTNAME##*-}
+              echo "Relayer Index: $RLY_INDEX"
+              rm -rf $RELAYER_DIR
+              mkdir -p $RELAYER_DIR/config
+              cp /configs/config.yaml $RELAYER_DIR/config/config.yaml
+              MNEMONIC=$(jq -r ".relayers[$RLY_INDEX].mnemonic" $KEYS_CONFIG)
+              echo $MNEMONIC
+              {{- range $i, $chain_id := $relayer.chains }}
+              {{- range $fullchain := $.Values.chains }}
+              {{- if eq $fullchain.name $chain_id }}
+              echo "Creating key for {{ $chain_id }}..."
+              RLY_ADDR=$(rly keys restore {{ $chain_id }} {{ $chain_id }}-key "$MNEMONIC")
+              DENOM="{{ $fullchain.denom }}"
+              echo "Transfer tokens to address $RLY_ADDR"
+              bash -e /scripts/transfer_tokens.sh $RLY_ADDR $DENOM "http://{{ $fullchain.name }}-genesis.$NAMESPACE.svc.cluster.local:8000/credit"
+              {{- end }}
+              {{- end }}
+              {{- end }}
+              rly transact link {{ $relayer.name }} --home="$RELAYER_DIR"
+          volumeMounts:
+            - mountPath: /root
+              name: relayer
+            - mountPath: /configs
+              name: relayer-config
+            - mountPath: /keys
+              name: keys
+            - mountPath: /scripts
+              name: scripts
+          resources: {{- include "devnet.node.resources" ( dict "node" $relayer "context" $ ) | trim | nindent 12 }}
+      containers:
+        - name: relayer
+          image: {{ $relayer.image | default $defaultRelayer.image }}
+          imagePullPolicy: Always
+          env:
+            - name: RELAYER_DIR
+              value: /root/.relayer
+          command:
+            - bash
+            - "-c"
+            - |
+              RLY_INDEX=${HOSTNAME##*-}
+              echo "Relayer Index: $RLY_INDEX"
+              rly start --home="$RELAYER_DIR"
+          resources: {{- include "devnet.node.resources" ( dict "node" $relayer "context" $ ) | trim | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
+          volumeMounts:
+            - mountPath: /root
+              name: relayer
+            - mountPath: /configs
+              name: relayer-config
+      volumes:
+        - name: relayer
+          emptyDir: { }
+        - name: relayer-config
+          configMap:
+            name: "{{ $relayer.type }}-{{ $relayer.name }}"
+        - name: keys
+          configMap:
+            name: keys
+        - name: scripts
+          configMap:
+            name: setup-scripts
+---
+{{- end }}
+{{- end }}
