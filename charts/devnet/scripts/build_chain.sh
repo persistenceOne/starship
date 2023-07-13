@@ -22,7 +22,7 @@ fi
 
 echo "Fetch wasmvm if needed"
 cd /tmp/chains/$CHAIN_NAME/$code_dir
-WASM_VERSION=$(cat go.mod | grep -oe "github.com/CosmWasm/wasmvm v[0-9.]*" | cut -d ' ' -f 2)
+WASM_VERSION=$(go list -m github.com/CosmWasm/wasmvm | awk -F' ' '{print $NF}')
 if [[ WASM_VERSION != "" ]]; then
   mkdir -p /tmp/chains/libwasmvm_muslc
   cd /tmp/chains/libwasmvm_muslc

@@ -1,0 +1,18 @@
+# TODO(ajeet): Added here to test the changes (to be deployed on gh_pages later)
+apiVersion: v1
+entries:
+  devnet:
+  - apiVersion: v2
+    appVersion: 0.1.1
+    created: "2023-07-01T23:51:41.776626+05:30"
+    description: A Helm chart for Kubernetes
+    digest: 87a958d4473f718b7163f150ad1e542bbfe0d701d483b074266c395a4096218b
+    maintainers:
+    - name: Starship
+      url: https://github.com/cosmology-tech/starship
+    name: devnet
+    type: application
+    urls:
+    - https://raw.githubusercontent.com/persistenceOne/starship/ajeet/sdk-v47/helm_repo/devnet-0.1.37.tgz
+    version: 0.1.37
+generated: "2023-07-01T23:51:41.773853+05:30"
